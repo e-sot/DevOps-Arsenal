@@ -1,0 +1,45 @@
+---
+- name: Create monitoring directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ prometheus_data_dir }}"
+    - "{{ grafana_data_dir }}"
+    - "{{ prometheus_config_dir }}"
+    - "{{ grafana_config_dir }}"
+
+- name: Deploy Prometheus configuration
+  template:
+    src: prometheus.yml.j2
+    dest: "{{ prometheus_config_dir }}/prometheus.yml"
+    mode: '0644'
+  notify: restart prometheus
+
+- name: Deploy Grafana datasource configuration
+  template:
+    src: grafana-datasource.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/datasources/prometheus.yml"
+    mode: '0644'
+  notify: restart grafana
+
+- name: Deploy monitoring stack
+  docker_compose:
+    project_src: "{{ monitoring_compose_dir }}"
+    state: present
+  tags: ['deploy']
+
+- name: Wait for services to be healthy
+  uri:
+    url: "http://localhost:{{ item.port }}{{ item.path }}"
+    method: GET
+    status_code: 200
+  register: health_check
+  until: health_check.status == 200
+  retries: 6
+  delay: 10
+  with_items:
+    - { port: 9090, path: '/-/healthy' }  # Prometheus
+    - { port: 3000, path: '/api/health' } # Grafana
+  tags: ['health']

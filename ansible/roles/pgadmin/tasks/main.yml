@@ -1,0 +1,61 @@
+---
+- name: Check system requirements
+  block:
+    - name: Verify Docker installation
+      command: docker --version
+      register: docker_check
+      failed_when: docker_check.rc != 0
+      changed_when: false
+      tags: ['check', 'docker']
+
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+      register: compose_check
+      failed_when: compose_check.rc != 0
+      changed_when: false
+      tags: ['check', 'docker']
+
+    - name: Check required disk space
+      shell: df -h {{ pgadmin_data_path }} | awk 'NR==2 {print $4}'
+      register: disk_space
+      failed_when: disk_space.stdout | float < 1.0
+      changed_when: false
+      tags: ['check', 'system']
+
+- name: Create required directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ pgadmin_data_path }}"
+    - "{{ pgadmin_compose_dir }}"
+  tags: ['config', 'directories']
+
+- name: Deploy configuration files
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0644'
+  with_items:
+    - { src: 'docker-compose.yml.j2', dest: '{{ pgadmin_compose_dir }}/docker-compose.yml' }
+    - { src: 'servers.json.j2', dest: '{{ pgadmin_compose_dir }}/servers.json' }
+  notify: "restart pgadmin services"
+  tags: ['config', 'compose']
+
+- name: Start PgAdmin stack
+  docker_compose:
+    project_src: "{{ pgadmin_compose_dir }}"
+    state: present
+  tags: ['deploy']
+
+- name: Test PgAdmin deployment
+  uri:
+    url: "http://localhost:5050"
+    method: GET
+    status_code: 200
+  register: pgadmin_test
+  until: pgadmin_test.status == 200
+  retries: 6
+  delay: 10
+  tags: ['test']

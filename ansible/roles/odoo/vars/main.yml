@@ -1,0 +1,16 @@
+---
+odoo_compose_dir: "{{ base_path }}/odoo"
+odoo_data_path: "{{ data_path }}/odoo"
+odoo_network: odoo_network
+odoo_container_name: odoo_app
+odoo_db_container_name: odoo_db
+odoo_port: 8069
+
+# Database configuration from group_vars
+# postgres_user: defined in group_vars/all.yml
+# postgres_password: defined in group_vars/all.yml
+# postgres_db: defined in group_vars/all.yml
+
+# Configuration paths
+odoo_config_path: "{{ odoo_data_path }}/config"
+odoo_addons_path: "{{ odoo_data_path }}/addons"

@@ -1,0 +1,111 @@
+# Global Security Policies
+policies:
+  password:
+    minimum_length: 12
+    require_uppercase: true
+    require_lowercase: true
+    require_numbers: true
+    require_special_chars: true
+    max_age_days: 90
+    history_size: 12
+    lockout_attempts: 5
+    lockout_duration_minutes: 30
+
+  session:
+    timeout_minutes: 30
+    max_concurrent_sessions: 3
+    require_2fa: true
+    jwt_expiration_hours: 4
+    refresh_token_days: 7
+
+  network:
+    allowed_ips:
+      - "10.0.0.0/8"    # Internal network
+      - "172.16.0.0/12" # Docker network
+      - "192.168.0.0/16" # VPN network
+    blocked_countries:
+      - "CN"
+      - "RU"
+      - "KP"
+    rate_limiting:
+      requests_per_minute: 60
+      burst: 100
+
+  encryption:
+    minimum_tls_version: "TLSv1.3"
+    allowed_ciphers:
+      - "TLS_AES_256_GCM_SHA384"
+      - "TLS_CHACHA20_POLY1305_SHA256"
+      - "TLS_AES_128_GCM_SHA256"
+    key_rotation_days: 90
+    hash_algorithm: "SHA-512"
+
+  audit:
+    retention_days: 365
+    log_levels:
+      - "ERROR"
+      - "WARNING"
+      - "SECURITY"
+      - "AUTH"
+    required_fields:
+      - timestamp
+      - user_id
+      - action
+      - resource
+      - ip_address
+      - user_agent
+
+  backup:
+    encryption_required: true
+    retention_days: 90
+    frequency_hours: 24
+    types:
+      - "FULL"
+      - "INCREMENTAL"
+    locations:
+      - type: "LOCAL"
+        path: "/backup/local"
+        retention_days: 7
+      - type: "REMOTE"
+        path: "s3://backup-bucket"
+        retention_days: 90
+
+  kubernetes:
+    pod_security_policies:
+      privileged: false
+      allow_privilege_escalation: false
+      read_only_root_filesystem: true
+      run_as_non_root: true
+      allowed_capabilities: []
+      drop_capabilities:
+        - "ALL"
+    network_policies:
+      default_deny: true
+      allowed_namespaces:
+        - "kube-system"
+        - "monitoring"
+        - "logging"
+
+  secrets:
+    vault_policies:
+      rotation_period_days: 30
+      max_ttl_hours: 72
+      require_approval: true
+      approvers_required: 2
+
+  compliance:
+    required_headers:
+      - "X-Content-Type-Options: nosniff"
+      - "X-Frame-Options: DENY"
+      - "X-XSS-Protection: 1; mode=block"
+      - "Strict-Transport-Security: max-age=31536000; includeSubDomains"
+    cookie_settings:
+      secure: true
+      http_only: true
+      same_site: "Strict"
+    cors_policy:
+      allowed_origins: []
+      allowed_methods:
+        - "GET"
+        - "POST"
+      max_age_seconds: 3600

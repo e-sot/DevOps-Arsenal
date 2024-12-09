@@ -1,0 +1,20 @@
+version: '3'
+services:
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: {{ pgadmin_container_name }}
+    ports:
+      - "{{ pgadmin_port }}:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL={{ pgadmin_email }}
+      - PGADMIN_DEFAULT_PASSWORD={{ lookup('hashi_vault', 'secret=secret/data/pgadmin/admin:password') }}
+    volumes:
+      - {{ pgadmin_data_path }}:/var/lib/pgadmin
+      - {{ pgadmin_compose_dir }}/servers.json:/pgadmin4/servers.json
+    networks:
+      - {{ pgadmin_network }}
+    restart: unless-stopped
+
+networks:
+  {{ pgadmin_network }}:
+    external: true

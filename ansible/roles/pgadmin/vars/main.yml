@@ -1,0 +1,17 @@
+---
+pgadmin_compose_dir: "{{ base_path }}/pgadmin"
+pgadmin_data_path: "{{ data_path }}/pgadmin"
+pgadmin_network: pgadmin_network
+pgadmin_container_name: pgadmin_app
+pgadmin_port: 5050
+
+# Database connection
+odoo_db_host: odoo-db
+odoo_db_port: 5432
+
+# Credentials from group_vars
+# pgadmin_email: defined in group_vars/all.yml
+# pgadmin_password: defined in group_vars/all.yml
+# postgres_user: defined in group_vars/all.yml
+# postgres_password: defined in group_vars/all.yml
+# postgres_db: defined in group_vars/all.yml

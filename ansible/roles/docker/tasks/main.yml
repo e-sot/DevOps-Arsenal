@@ -1,0 +1,51 @@
+---
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+  tags: ['docker']
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu focal stable
+    state: present
+  tags: ['docker']
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+  tags: ['docker']
+
+- name: Install Docker Compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-Linux-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  tags: ['docker']
+
+- name: Add user to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  with_items: "{{ docker_users }}"
+  tags: ['docker']
+
+- name: Start Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
+  tags: ['docker']
+
+- name: Create Docker networks
+  docker_network:
+    name: "{{ item.value.name }}"
+    driver: "{{ item.value.driver }}"
+    state: present
+  with_dict: "{{ docker_networks }}"
+  tags: ['docker', 'network']

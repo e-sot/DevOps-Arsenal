@@ -1,0 +1,173 @@
+# Access Control Policy Configuration
+access_control:
+  # Authentication Configuration
+  authentication:
+    methods:
+      primary:
+        - type: "password"
+          min_length: 12
+          complexity:
+            require_uppercase: true
+            require_lowercase: true
+            require_numbers: true
+            require_special: true
+            max_repeating_chars: 2
+        - type: "certificate"
+          validity_days: 365
+          key_size: 4096
+          signature_algorithm: "sha512WithRSAEncryption"
+      mfa:
+        required: true
+        methods:
+          - type: "totp"
+            issuer: "ETO Group"
+            digits: 6
+            period: 30
+          - type: "u2f"
+            allowed_devices:
+              - "yubikey"
+              - "google-titan"
+    
+    session_management:
+      max_sessions: 3
+      session_timeout: 30m
+      idle_timeout: 15m
+      remember_me:
+        enabled: false
+        max_duration: 7d
+      force_logout_on:
+        - password_change
+        - role_change
+        - security_incident
+
+  # Authorization Configuration
+  authorization:
+    rbac:
+      roles:
+        admin:
+          description: "System Administrator"
+          permissions:
+            - "system:*"
+            - "security:*"
+            - "audit:*"
+          restrictions:
+            - "no_prod_delete"
+            - "require_approval"
+        
+        devops:
+          description: "DevOps Engineer"
+          permissions:
+            - "deploy:*"
+            - "monitor:*"
+            - "logs:read"
+          restrictions:
+            - "no_security_config"
+            - "no_user_manage"
+        
+        developer:
+          description: "Application Developer"
+          permissions:
+            - "code:write"
+            - "deploy:dev"
+            - "logs:read"
+          restrictions:
+            - "no_prod_access"
+            - "no_sensitive_data"
+        
+        auditor:
+          description: "Security Auditor"
+          permissions:
+            - "audit:read"
+            - "logs:read"
+            - "metrics:read"
+          restrictions:
+            - "read_only"
+            - "no_config_change"
+
+    permission_sets:
+      system:
+        - "system:read"
+        - "system:write"
+        - "system:execute"
+        - "system:delete"
+      security:
+        - "security:read"
+        - "security:write"
+        - "security:manage"
+      audit:
+        - "audit:read"
+        - "audit:write"
+      deploy:
+        - "deploy:read"
+        - "deploy:write"
+        - "deploy:execute"
+
+  # Access Control Lists
+  acl:
+    resources:
+      kubernetes:
+        namespaces:
+          - name: "production"
+            allowed_roles: ["admin", "devops"]
+          - name: "staging"
+            allowed_roles: ["admin", "devops", "developer"]
+          - name: "development"
+            allowed_roles: ["admin", "devops", "developer"]
+      
+      databases:
+        - name: "prod_db"
+          allowed_roles: ["admin"]
+          allowed_operations: ["read", "write", "delete"]
+        - name: "staging_db"
+          allowed_roles: ["admin", "devops"]
+          allowed_operations: ["read", "write"]
+        - name: "dev_db"
+          allowed_roles: ["admin", "devops", "developer"]
+          allowed_operations: ["read", "write"]
+
+  # IP Restrictions
+  ip_restrictions:
+    allowed_networks:
+      internal:
+        - "10.0.0.0/8"
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"
+      vpn:
+        - "10.8.0.0/24"
+    
+    restricted_access:
+      production:
+        networks: ["internal", "vpn"]
+        additional_auth: true
+      admin_panel:
+        networks: ["internal"]
+        require_mfa: true
+
+  # Audit Configuration
+  audit:
+    events:
+      authentication:
+        - login_success
+        - login_failure
+        - logout
+        - password_change
+        - mfa_change
+      authorization:
+        - permission_grant
+        - permission_revoke
+        - role_change
+      access:
+        - resource_access
+        - config_change
+        - system_command
+    
+    logging:
+      retention_period: 365d
+      log_format: "json"
+      required_fields:
+        - timestamp
+        - user_id
+        - event_type
+        - resource
+        - ip_address
+        - user_agent

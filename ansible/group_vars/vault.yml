@@ -1,0 +1,33 @@
+---
+vault_version: "1.12.0"
+vault_port: 8200
+vault_addr: "https://vault.eto.local"
+vault_cluster_addr: "https://vault.eto.local:8201"
+
+# Certificats SSL
+vault_tls_cert_path: "/opt/vault/tls"
+vault_tls_cert_file: "{{ vault_tls_cert_path }}/vault.crt"
+vault_tls_key_file: "{{ vault_tls_cert_path }}/vault.key"
+
+# Storage
+vault_storage_path: "/opt/vault/data"
+
+# Initial configuration
+vault_init_shares: 5
+vault_init_threshold: 3
+
+# Audit logging
+vault_audit_path: "/opt/vault/audit"
+
+# Policies
+vault_policies:
+  - name: "odoo-policy"
+    rules: |
+      path "secret/odoo/*" {
+        capabilities = ["read", "list"]
+      }
+  - name: "pgadmin-policy"
+    rules: |
+      path "secret/pgadmin/*" {
+        capabilities = ["read", "list"]
+      }

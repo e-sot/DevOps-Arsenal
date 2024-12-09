@@ -1,0 +1,93 @@
+---
+- name: Create Vault directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0750'
+    owner: vault
+    group: vault
+  with_items:
+    - "{{ vault_config_dir }}"
+    - "{{ vault_data_dir }}"
+    - "{{ vault_tls_dir }}"
+    - "{{ vault_audit_dir }}"
+  tags: ['vault', 'setup']
+
+- name: Generate TLS certificates for Vault
+  openssl_certificate:
+    path: "{{ vault_tls_dir }}/vault.crt"
+    privatekey_path: "{{ vault_tls_dir }}/vault.key"
+    provider: selfsigned
+    selfsigned_digest: sha256
+    common_name: "vault.eto.local"
+    subject_alt_name:
+      - "DNS:vault.eto.local"
+      - "DNS:vault.etogroup.svc.cluster.local"
+    owner: vault
+    group: vault
+    mode: '0600'
+  tags: ['vault', 'tls']
+
+- name: Deploy Vault configuration
+  template:
+    src: vault-config.hcl.j2
+    dest: "{{ vault_config_dir }}/vault.hcl"
+    owner: vault
+    group: vault
+    mode: '0640'
+  notify: restart vault
+  tags: ['vault', 'config']
+
+- name: Deploy Vault Docker Compose
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ vault_compose_dir }}/docker-compose.yml"
+    mode: '0644'
+  notify: restart vault
+  tags: ['vault', 'deploy']
+
+- name: Start Vault service
+  docker_compose:
+    project_src: "{{ vault_compose_dir }}"
+    state: present
+  tags: ['vault', 'deploy']
+
+- name: Wait for Vault to be ready
+  uri:
+    url: "https://127.0.0.1:8200/v1/sys/health"
+    validate_certs: no
+    return_content: yes
+  register: vault_health
+  until: vault_health.status == 200
+  retries: 12
+  delay: 10
+  tags: ['vault', 'health']
+
+- name: Initialize Vault if needed
+  block:
+    - name: Check Vault initialization status
+      uri:
+        url: "https://127.0.0.1:8200/v1/sys/init"
+        validate_certs: no
+        return_content: yes
+      register: init_status
+
+    - name: Initialize Vault
+      uri:
+        url: "https://127.0.0.1:8200/v1/sys/init"
+        method: PUT
+        body_format: json
+        body:
+          secret_shares: "{{ vault_init_shares }}"
+          secret_threshold: "{{ vault_init_threshold }}"
+        validate_certs: no
+      register: init_response
+      when: not init_status.json.initialized
+
+    - name: Save initialization keys
+      copy:
+        content: "{{ init_response.json | to_nice_json }}"
+        dest: "{{ vault_config_dir }}/init.json"
+        mode: '0600'
+      when: init_response is changed
+  tags: ['vault', 'init']

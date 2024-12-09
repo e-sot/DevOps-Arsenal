@@ -1,0 +1,133 @@
+groups:
+  - name: system_alerts
+    rules:
+      # System Resources
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage has been above 85% for 5 minutes"
+          value: "{{ $value }}%"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage has been above 90% for 5 minutes"
+          value: "{{ $value }}%"
+
+      - alert: DiskSpaceRunningOut
+        expr: |
+          (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Disk usage has been above 85% for 5 minutes"
+          value: "{{ $value }}%"
+
+      # Network Issues
+      - alert: NetworkReceiveErrors
+        expr: rate(node_network_receive_errs_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "Network receive errors on {{ $labels.instance }}"
+          description: "Network interface {{ $labels.device }} is experiencing receive errors"
+          value: "{{ $value }} errors/s"
+
+      - alert: NetworkTransmitErrors
+        expr: rate(node_network_transmit_errs_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+          category: network
+        annotations:
+          summary: "Network transmit errors on {{ $labels.instance }}"
+          description: "Network interface {{ $labels.device }} is experiencing transmit errors"
+          value: "{{ $value }} errors/s"
+
+      # System Load
+      - alert: HighSystemLoad
+        expr: node_load1 > (count by(instance) (node_cpu_seconds_total{mode="idle"}) * 1.5)
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High system load on {{ $labels.instance }}"
+          description: "System load is high relative to CPU count"
+          value: "{{ $value }} load average"
+
+      # Process Issues
+      - alert: TooManyProcesses
+        expr: node_processes_state{state="running"} > 1000
+        for: 5m
+        labels:
+          severity: warning
+          category: process
+        annotations:
+          summary: "Too many processes on {{ $labels.instance }}"
+          description: "More than 1000 processes running"
+          value: "{{ $value }} processes"
+
+      - alert: ZombieProcesses
+        expr: node_processes_state{state="zombie"} > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: process
+        annotations:
+          summary: "Zombie processes on {{ $labels.instance }}"
+          description: "More than 5 zombie processes detected"
+          value: "{{ $value }} zombie processes"
+
+      # File System
+      - alert: InodeUsage
+        expr: node_filesystem_files_free{mountpoint="/"} / node_filesystem_files{mountpoint="/"} * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "Low inode usage on {{ $labels.instance }}"
+          description: "Less than 10% inodes free"
+          value: "{{ $value }}% free"
+
+      # System Time
+      - alert: SystemClockDrift
+        expr: abs(node_timex_offset_seconds) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "System clock drift on {{ $labels.instance }}"
+          description: "System clock is drifting"
+          value: "{{ $value }} seconds offset"
+
+      # Hardware Issues
+      - alert: HighCPUTemperature
+        expr: node_hwmon_temp_celsius > 80
+        for: 5m
+        labels:
+          severity: critical
+          category: hardware
+        annotations:
+          summary: "High CPU temperature on {{ $labels.instance }}"
+          description: "CPU temperature is above 80°C"
+          value: "{{ $value }}°C"

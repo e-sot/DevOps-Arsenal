@@ -1,0 +1,278 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eto-webapp-config
+  namespace: eto
+  labels:
+    app: eto-webapp
+    environment: production
+data:
+  # Application Configuration
+  APP_NAME: "ETO Group Applications"
+  APP_VERSION: "1.0.0"
+  ENVIRONMENT: "production"
+  DEBUG: "false"
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+  
+  # Service URLs and Endpoints
+  ODOO_URL: "http://odoo-service:8069"
+  PGADMIN_URL: "http://pgadmin-service:5050"
+  VAULT_URL: "http://vault-service:8200"
+  API_BASE_URL: "https://api.eto-group.com"
+  
+  # Database Configuration
+  DB_HOST: "postgres-service"
+  DB_PORT: "5432"
+  DB_NAME: "etodb"
+  
+  # Redis Configuration
+  REDIS_HOST: "redis-service"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  
+  # Logging Configuration
+  logging.conf: |
+    [loggers]
+    keys=root,gunicorn.error,gunicorn.access,webapp
+
+    [handlers]
+    keys=console,error_file,access_file
+
+    [formatters]
+    keys=generic,access
+
+    [logger_root]
+    level=INFO
+    handlers=console
+
+    [logger_gunicorn.error]
+    level=INFO
+    handlers=error_file
+    propagate=0
+    qualname=gunicorn.error
+
+    [logger_gunicorn.access]
+    level=INFO
+    handlers=access_file
+    propagate=0
+    qualname=gunicorn.access
+
+    [logger_webapp]
+    level=INFO
+    handlers=console
+    propagate=0
+    qualname=webapp
+
+    [handler_console]
+    class=StreamHandler
+    formatter=generic
+    args=(sys.stdout, )
+
+    [handler_error_file]
+    class=logging.handlers.RotatingFileHandler
+    formatter=generic
+    args=('/var/log/gunicorn/error.log', 'a', 10485760, 3)
+
+    [handler_access_file]
+    class=logging.handlers.RotatingFileHandler
+    formatter=access
+    args=('/var/log/gunicorn/access.log', 'a', 10485760, 3)
+
+    [formatter_generic]
+    format=%(asctime)s [%(process)d] [%(levelname)s] %(message)s
+    datefmt=%Y-%m-%d %H:%M:%S
+    class=logging.Formatter
+
+    [formatter_access]
+    format=%(message)s
+    class=logging.Formatter
+
+  # Metrics Configuration
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        environment: production
+        
+    scrape_configs:
+      - job_name: 'eto-webapp'
+        metrics_path: '/metrics'
+        static_configs:
+          - targets: ['localhost:8080']
+        
+      - job_name: 'node-exporter'
+        static_configs:
+          - targets: ['localhost:9100']
+
+  # Resource Limits
+  resources.conf: |
+    worker_processes auto;
+    worker_rlimit_nofile 65535;
+    events {
+        worker_connections 65535;
+        use epoll;
+        multi_accept on;
+    }
+    http {
+        keepalive_timeout 65;
+        keepalive_requests 100;
+        reset_timedout_connection on;
+        client_body_timeout 10;
+        send_timeout 2;
+        client_max_body_size 10m;
+    }
+
+  # Application Timeouts
+  timeouts.conf: |
+    GUNICORN_TIMEOUT: "30"
+    GUNICORN_WORKERS: "4"
+    GUNICORN_THREADS: "2"
+    DB_CONNECTION_TIMEOUT: "5"
+    REDIS_SOCKET_TIMEOUT: "5"
+    API_TIMEOUT: "10"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-config
+  namespace: eto
+  labels:
+    app: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+      slack_api_url: 'https://hooks.slack.com/services/YOUR/SLACK/WEBHOOK'
+
+    route:
+      group_by: ['alertname', 'cluster', 'service']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      receiver: 'slack-notifications'
+
+    receivers:
+    - name: 'slack-notifications'
+      slack_configs:
+      - channel: '#alerts'
+        send_resolved: true
+        title: '{{ template "slack.default.title" . }}'
+        text: '{{ template "slack.default.text" . }}'
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: eto
+  labels:
+    app: nginx
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+
+    events {
+        worker_connections 65535;
+        use epoll;
+        multi_accept on;
+    }
+
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        log_format main '$remote_addr - $remote_user [$time_local] "$request" '
+                       '$status $body_bytes_sent "$http_referer" '
+                       '"$http_user_agent" "$http_x_forwarded_for"';
+        
+        access_log /var/log/nginx/access.log main;
+        
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        server_tokens off;
+        
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_prefer_server_ciphers on;
+        ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+        
+        include /etc/nginx/conf.d/*.conf;
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: eto-webapp-config
+  namespace: eto-production
+  labels:
+    app: eto-webapp
+    environment: production
+data:
+  # Application Settings
+  PORT: "8080"
+  ENV: "production"
+  APP_NAME: "eto-webapp"
+  APP_VERSION: "1.0.0"
+  DEBUG: "false"
+  LOG_LEVEL: "INFO"
+
+  # URLs Configuration
+  ODOO_URL: "http://odoo.eto.local"
+  PGADMIN_URL: "http://pgadmin.eto.local"
+  REDIS_URL: "redis://redis:6379/0"
+
+  # Database Configuration
+  DB_HOST: "postgres"
+  DB_PORT: "5432"
+  DB_NAME: "etodb"
+  DB_USER: "etouser"
+
+  # Redis Configuration
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+
+  # Monitoring Configuration
+  PROMETHEUS_METRICS: "true"
+
+  # Docker Configuration
+  DOCKER_REGISTRY: "registry.eto.local"
+
+  # Kubernetes Configuration
+  K8S_NAMESPACE: "eto-production"
+  K8S_CLUSTER_NAME: "eto-cluster"
+
+  # Backup Configuration
+  BACKUP_ENABLED: "true"
+  BACKUP_PATH: "/data/backups"
+  BACKUP_RETENTION_DAYS: "7"
+
+  # Rate Limiting
+  RATE_LIMIT_ENABLED: "true"
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_PERIOD: "60"
+
+  # Health Check Configuration
+  HEALTH_CHECK_INTERVAL: "30"
+  HEALTH_CHECK_TIMEOUT: "5"
+  HEALTH_CHECK_RETRIES: "3"
+
+  # SSL/TLS Paths
+  SSL_CERT_PATH: "/etc/ssl/certs/eto.crt"
+  SSL_KEY_PATH: "/etc/ssl/private/eto.key"
+  SSL_CA_PATH: "/etc/ssl/certs/ca.crt"
+
+  # CORS Configuration
+  CORS_ORIGINS: |
+    [
+      "https://eto.local",
+      "https://admin.eto.local"
+    ]

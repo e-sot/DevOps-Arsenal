@@ -1,0 +1,19 @@
+version: 1.0.0
+date: 2024-12-05
+changes:
+  - Initial release
+  - Integration with Odoo ERP
+  - PgAdmin management interface
+  - Vault secrets management
+  - Prometheus/Grafana monitoring
+
+urls:
+  ODOO_URL: http://odoo.eto.local
+  PGADMIN_URL: http://pgadmin.eto.local
+  VAULT_URL: https://vault.eto.local
+
+dependencies:
+  python: 3.11
+  docker: 24.0.0
+  kubernetes: 1.28
+  ansible: 2.15

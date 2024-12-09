@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+  namespace: etogroup
+  labels:
+    app: vault
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: '8200'
+    prometheus.io/path: '/v1/sys/metrics'
+spec:
+  type: ClusterIP
+  ports:
+    - name: api
+      port: 8200
+      targetPort: 8200
+      protocol: TCP
+    - name: cluster
+      port: 8201
+      targetPort: 8201
+      protocol: TCP
+  selector:
+    app: vault
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vault-ingress
+  namespace: etogroup
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+spec:
+  tls:
+    - hosts:
+        - vault.eto.local
+      secretName: vault-tls
+  rules:
+    - host: vault.eto.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vault
+                port:
+                  number: 8200

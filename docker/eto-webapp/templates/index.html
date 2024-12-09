@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ETO WebApp - Administration</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f6fa;
+            color: var(--primary-color);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            background: var(--primary-color);
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            color: var(--secondary-color);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            background: var(--secondary-color);
+            transition: background 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-active {
+            background: var(--success-color);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <h1>ETO WebApp</h1>
+            <p>Plateforme d'Administration</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="dashboard">
+            <div class="card">
+                <h2>Odoo ERP</h2>
+                <p>Gestion des ressources d'entreprise</p>
+                <div class="status">
+                    <span class="status-dot status-active"></span>
+                    <span>Système actif</span>
+                </div>
+                <p><a href="{{ odoo_url }}" class="btn">Accéder à Odoo</a></p>
+            </div>
+
+            <div class="card">
+                <h2>PgAdmin</h2>
+                <p>Administration des bases de données</p>
+                <div class="status">
+                    <span class="status-dot status-active"></span>
+                    <span>Système actif</span>
+                </div>
+                <p><a href="{{ pgadmin_url }}" class="btn">Accéder à PgAdmin</a></p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

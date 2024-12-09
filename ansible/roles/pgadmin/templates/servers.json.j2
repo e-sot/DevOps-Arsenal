@@ -1,0 +1,14 @@
+{
+    "Servers": {
+        "1": {
+            "Name": "Odoo Database",
+            "Group": "ETO Servers",
+            "Host": "{{ odoo_db_host }}",
+            "Port": {{ odoo_db_port }},
+            "MaintenanceDB": "{{ postgres_db }}",
+            "Username": "{{ postgres_user }}",
+            "Password": "{{ lookup('hashi_vault', 'secret=secret/data/odoo/db:password') }}"
+            "SSLMode": "prefer"
+        }
+    }
+}

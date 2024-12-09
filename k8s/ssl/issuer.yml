@@ -1,0 +1,32 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@eto.local
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: eto-wildcard-cert
+  namespace: etogroup
+spec:
+  secretName: eto-tls
+  duration: 2160h # 90 jours
+  renewBefore: 360h # 15 jours
+  commonName: "*.eto.local"
+  dnsNames:
+    - "*.eto.local"
+    - "eto.local"
+  issuerRef:
+    name: letsencrypt-prod
+    kind: ClusterIssuer

@@ -1,0 +1,112 @@
+groups:
+  - name: application_alerts
+    rules:
+      # Service Health
+      - alert: ServiceDown
+        expr: up{job="eto-webapp"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: eto-webapp
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "Service has been down for more than 1 minute"
+
+      # Response Time
+      - alert: HighResponseTime
+        expr: rate(http_request_duration_seconds_sum{job="eto-webapp"}[5m]) / rate(http_request_duration_seconds_count{job="eto-webapp"}[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: eto-webapp
+        annotations:
+          summary: "High response time on {{ $labels.instance }}"
+          description: "Response time is above 500ms for 5 minutes"
+
+      # Error Rate
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{job="eto-webapp",status=~"5.."}[5m])) / sum(rate(http_requests_total{job="eto-webapp"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          service: eto-webapp
+        annotations:
+          summary: "High error rate on {{ $labels.instance }}"
+          description: "Error rate is above 5% for 5 minutes"
+
+      # Memory Usage
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes{job="eto-webapp"} > 1e9
+        for: 5m
+        labels:
+          severity: warning
+          service: eto-webapp
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage above 1GB for 5 minutes"
+
+      # CPU Usage
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total{job="eto-webapp"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: eto-webapp
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage above 80% for 5 minutes"
+
+      # Database Connections
+      - alert: HighDatabaseConnections
+        expr: pg_stat_activity_count{job="eto-webapp"} > 100
+        for: 5m
+        labels:
+          severity: warning
+          service: database
+        annotations:
+          summary: "High number of database connections"
+          description: "More than 100 active database connections for 5 minutes"
+
+      # Disk Usage
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: system
+        annotations:
+          summary: "High disk usage on {{ $labels.instance }}"
+          description: "Disk usage above 85% for 5 minutes"
+
+      # SSL Certificate Expiry
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+        for: 1h
+        labels:
+          severity: warning
+          service: ssl
+        annotations:
+          summary: "SSL certificate expiring soon on {{ $labels.instance }}"
+          description: "SSL certificate will expire in less than 30 days"
+
+      # Backup Status
+      - alert: BackupFailure
+        expr: backup_last_success_timestamp_seconds < (time() - 86400)
+        for: 1h
+        labels:
+          severity: critical
+          service: backup
+        annotations:
+          summary: "Backup failure on {{ $labels.instance }}"
+          description: "Last successful backup was more than 24 hours ago"
+
+      # API Availability
+      - alert: APIEndpointDown
+        expr: probe_success{job="blackbox"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: api
+        annotations:
+          summary: "API endpoint {{ $labels.instance }} is down"
+          description: "API endpoint has been unreachable for 5 minutes"

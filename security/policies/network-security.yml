@@ -1,0 +1,143 @@
+# Network Security Policy Configuration
+network_security:
+  # Firewall Configuration
+  firewall:
+    default_policy: DROP
+    allowed_services:
+      http:
+        port: 80
+        source: ANY
+        destination: INTERNAL_LB
+      https:
+        port: 443
+        source: ANY
+        destination: INTERNAL_LB
+      ssh:
+        port: 22
+        source: ADMIN_VPN
+        destination: MANAGEMENT_HOSTS
+      postgres:
+        port: 5432
+        source: APPLICATION_TIER
+        destination: DATABASE_TIER
+      redis:
+        port: 6379
+        source: APPLICATION_TIER
+        destination: CACHE_TIER
+
+  # Network Segmentation
+  segmentation:
+    zones:
+      dmz:
+        description: "DMZ zone for public-facing services"
+        allowed_incoming:
+          - HTTPS_TRAFFIC
+          - HTTP_TRAFFIC
+        allowed_outgoing:
+          - INTERNAL_API_CALLS
+          - DNS_QUERIES
+      application:
+        description: "Application zone for business logic"
+        allowed_incoming:
+          - INTERNAL_API_CALLS
+          - MONITORING_TRAFFIC
+        allowed_outgoing:
+          - DATABASE_QUERIES
+          - CACHE_OPERATIONS
+      database:
+        description: "Database zone for data storage"
+        allowed_incoming:
+          - DATABASE_QUERIES
+          - BACKUP_OPERATIONS
+        allowed_outgoing:
+          - MONITORING_RESPONSES
+
+  # DDoS Protection
+  ddos_protection:
+    rate_limiting:
+      global:
+        requests_per_second: 10000
+        burst: 20000
+      per_ip:
+        requests_per_second: 100
+        burst: 200
+    connection_tracking:
+      max_connections_per_ip: 1000
+      tcp_timeout: 600
+      udp_timeout: 30
+    blacklist_triggers:
+      max_failed_attempts: 5
+      window_seconds: 300
+      block_duration_minutes: 60
+
+  # VPN Configuration
+  vpn:
+    protocols:
+      - OpenVPN
+      - WireGuard
+    encryption:
+      cipher: AES-256-GCM
+      key_size: 4096
+      perfect_forward_secrecy: true
+    authentication:
+      method: certificate
+      mfa_required: true
+      certificate_validity_days: 365
+
+  # Network Monitoring
+  monitoring:
+    intrusion_detection:
+      enabled: true
+      sensitivity: high
+      log_level: INFO
+    packet_capture:
+      enabled: true
+      retention_days: 30
+      max_size_gb: 500
+    alerts:
+      - name: suspicious_traffic
+        description: "Detect suspicious network patterns"
+        threshold: 100
+        window_minutes: 5
+        action: ALERT_AND_BLOCK
+
+  # SSL/TLS Configuration
+  tls:
+    minimum_version: TLSv1.3
+    allowed_ciphers:
+      - TLS_AES_256_GCM_SHA384
+      - TLS_CHACHA20_POLY1305_SHA256
+    certificate_policies:
+      provider: "Let's Encrypt"
+      auto_renewal: true
+      wildcard_allowed: false
+      validation_method: DNS-01
+
+  # Network Access Control
+  access_control:
+    authentication:
+      required: true
+      methods:
+        - certificate
+        - token
+      session_timeout_minutes: 30
+    authorization:
+      model: RBAC
+      default_policy: deny
+      roles:
+        - admin
+        - operator
+        - auditor
+
+  # Logging and Auditing
+  logging:
+    network_events:
+      enabled: true
+      retention_days: 90
+    security_events:
+      enabled: true
+      retention_days: 365
+    audit_trail:
+      enabled: true
+      include_metadata: true
+      encryption: true

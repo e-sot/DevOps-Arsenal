@@ -1,0 +1,51 @@
+---
+- name: Check system requirements
+  block:
+    - name: Verify Docker installation
+      command: docker --version
+      register: docker_check
+      failed_when: docker_check.rc != 0
+      changed_when: false
+      tags: ['check', 'docker']
+
+    - name: Verify Docker Compose installation
+      command: docker-compose --version
+      register: compose_check
+      failed_when: compose_check.rc != 0
+      changed_when: false
+      tags: ['check', 'docker']
+
+- name: Create required directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ odoo_data_path }}"
+    - "{{ odoo_compose_dir }}"
+  tags: ['config', 'directories']
+
+- name: Deploy docker-compose file
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ odoo_compose_dir }}/docker-compose.yml"
+    mode: '0644'
+  notify: "restart odoo services"
+  tags: ['config', 'compose']
+
+- name: Start Odoo stack
+  docker_compose:
+    project_src: "{{ odoo_compose_dir }}"
+    state: present
+  tags: ['deploy']
+
+- name: Test Odoo deployment
+  uri:
+    url: "http://localhost:8069"
+    method: GET
+    status_code: 200
+  register: odoo_test
+  until: odoo_test.status == 200
+  retries: 6
+  delay: 10
+  tags: ['test']

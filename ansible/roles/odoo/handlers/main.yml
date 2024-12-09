@@ -1,0 +1,14 @@
+---
+- name: restart odoo
+  docker_compose:
+    project_src: "{{ odoo_compose_dir }}"
+    services: odoo
+    restarted: true
+  listen: "restart odoo services"
+
+- name: restart postgres
+  docker_compose:
+    project_src: "{{ odoo_compose_dir }}"
+    services: db
+    restarted: true
+  listen: "restart database services"

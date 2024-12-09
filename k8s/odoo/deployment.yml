@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: odoo
+  namespace: eto-production
+  labels:
+    app: odoo
+    environment: production
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: odoo
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: odoo
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8069"
+        prometheus.io/path: "/web/prometheus/metrics"
+    spec:
+      containers:
+      - name: odoo
+        image: odoo:13.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8069
+          name: http
+        env:
+        - name: HOST
+          valueFrom:
+            configMapKeyRef:
+              name: eto-webapp-config
+              key: DB_HOST
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: eto-webapp-secrets
+              key: DB_USER
+        - name: PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: eto-webapp-secrets
+              key: DB_PASSWORD
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "1Gi"
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+        readinessProbe:
+          httpGet:
+            path: /web/health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /web/health
+            port: http
+          initialDelaySeconds: 60
+          periodSeconds: 20
+          timeoutSeconds: 5
+        volumeMounts:
+        - name: odoo-data
+          mountPath: /var/lib/odoo
+        - name: odoo-addons
+          mountPath: /mnt/extra-addons
+        - name: odoo-config
+          mountPath: /etc/odoo
+      volumes:
+      - name: odoo-data
+        persistentVolumeClaim:
+          claimName: odoo-data-pvc
+      - name: odoo-addons
+        persistentVolumeClaim:
+          claimName: odoo-addons-pvc
+      - name: odoo-config
+        configMap:
+          name: odoo-config
+      securityContext:
+        fsGroup: 101
+        runAsUser: 101
+        runAsNonRoot: true
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - odoo
+              topologyKey: kubernetes.io/hostname

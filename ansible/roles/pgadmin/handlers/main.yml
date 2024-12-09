@@ -1,0 +1,7 @@
+---
+- name: restart pgadmin
+  docker_compose:
+    project_src: "{{ pgadmin_compose_dir }}"
+    services: pgadmin
+    restarted: true
+  listen: "restart pgadmin services"

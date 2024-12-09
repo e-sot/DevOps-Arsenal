@@ -1,0 +1,36 @@
+---
+# Global vars
+env: production
+app_name: eto-webapp
+app_version: "1.0"
+
+# Docker configuration
+docker_users:
+  - ubuntu
+docker_compose_version: "1.29.2"
+
+# Application URLs
+odoo_url: "http://odoo.eto.local"
+pgadmin_url: "http://pgadmin.eto.local"
+
+# Database configuration
+db_host: db
+db_port: 5432
+db_user: odoo
+db_password: "{{ lookup('hashi_vault', 'secret=secret/data/odoo/db:password') }}"
+db_name: postgres
+
+# Paths configuration
+base_path: /opt
+odoo_path: "{{ base_path }}/odoo"
+pgadmin_path: "{{ base_path }}/pgadmin"
+data_path: /data
+
+# Network configuration
+docker_networks:
+  odoo_net:
+    name: odoo_network
+    driver: bridge
+  pgadmin_net:
+    name: pgadmin_network
+    driver: bridge

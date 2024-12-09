@@ -1,0 +1,12 @@
+---
+- name: Deploy Odoo
+  hosts: odoo
+  become: true
+  roles:
+    - odoo
+
+- name: Deploy PgAdmin
+  hosts: webapp
+  become: true
+  roles:
+    - pgadmin
