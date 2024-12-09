@@ -9,6 +9,8 @@
 🎯 Current Phase: Integration & Testing
 ```
 
+### Project structure
+
 ```text
 ci-cd-k8s-docker-ansible-webapp/
 ├── ansible/          # Infrastructure automation
