@@ -1,7 +1,7 @@
 # ETO WebApp - Enterprise Management Platform
 ## Project Structure
 
-
+```text
 ci-cd-k8s-docker-ansible-webapp/
 ├── ansible/          # Infrastructure automation
 ├── docker/          # Container configurations
@@ -9,35 +9,36 @@ ci-cd-k8s-docker-ansible-webapp/
 ├── monitoring/      # Monitoring configuration
 ├── security/        # Security and TLS
 └── tests/           # Unit and integration tests
+```
 
 ## Quick Start
 
-    ### Clone and setup:
+### Clone and setup:
 
 ```bash
 git clone git@github.com:your-org/eto-webapp.git
 cd eto-webapp
 cp .env.example .env
 ```
-    ## Start Vault:
+## Start Vault:
 
 ```bash
 cd docker/vault/config
 docker-compose up -d
 ```
-    Deploy Odoo:
+### Deploy Odoo:
 
 ```bash
 cd docker/odoo
 docker-compose up -d
 ```
-    Deploy PgAdmin:
+### Deploy PgAdmin:
 
 ```bash
 cd docker/pgadmin
 docker-compose up -d
 ```
-    Deploy Monitoring:
+### Deploy Monitoring:
 
 ```bash
 cd docker/monitoring
