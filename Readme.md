@@ -1,7 +1,7 @@
 # ETO WebApp - Enterprise Management Platform
 ## Project Structure
 
-```text
+
 ci-cd-k8s-docker-ansible-webapp/
 ├── ansible/          # Infrastructure automation
 ├── docker/          # Container configurations
@@ -9,7 +9,6 @@ ci-cd-k8s-docker-ansible-webapp/
 ├── monitoring/      # Monitoring configuration
 ├── security/        # Security and TLS
 └── tests/           # Unit and integration tests
-```
 
 ## Quick Start
 
