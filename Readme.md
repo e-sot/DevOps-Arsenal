@@ -142,11 +142,4 @@ Security
     SSL/TLS mandatory for all services
 
 
-## Environment Variables
 
-ODOO_URL=http://odoo.eto.local
-PGADMIN_URL=http://pgadmin.eto.local
-POSTGRES_USER=odoo
-POSTGRES_PASSWORD=odoo@2024
-PGADMIN_DEFAULT_EMAIL=admin@eto.local
-PGADMIN_DEFAULT_PASSWORD=admin@2024
