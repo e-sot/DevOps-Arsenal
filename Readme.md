@@ -1,145 +1,86 @@
-# ETO GROUP Project - DevOps Infrastructure
+# ETO WebApp - Enterprise Management Platform
+## Project Structure
 
-## Project Architecture
-
-eto-project/
-├── docker/
-│   ├── eto-webapp/
-│   │   ├── Dockerfile
-│   │   ├── app.py
-│   │   ├── requirements.txt
-│   │   └── templates/
-│   │       └── index.html
-│   ├── odoo/
-│   │   └── docker-compose.yml
-│   └── pgadmin/
-│       ├── docker-compose.yml
-│       └── servers.json
-├── k8s/
-│   ├── namespace.yml
-│   ├── secrets.yml
-│   ├── configmaps.yml
-│   ├── odoo/
-│   │   ├── deployment.yml
-│   │   ├── service.yml
-│   │   └── pvc.yml
-│   └── pgadmin/
-│       ├── deployment.yml
-│       ├── service.yml
-│       └── pvc.yml
-├── ansible/
-│   ├── inventory/
-│   │   └── hosts.yml
-│   ├── playbook.yml
-│   └── roles/
-│       ├── odoo/
-│       │   ├── tasks/
-│       │   ├── templates/
-│       │   └── vars/
-│       └── pgadmin/
-│           ├── tasks/
-│           ├── templates/
-│           └── vars/
-├── Jenkinsfile
-└── releases.txt
-
-## Overview
-Enterprise-grade infrastructure project implementing a secure and scalable architecture using Docker, Kubernetes, Ansible, and Jenkins for ETO Group's internal applications.
-
-## Features
-
-### Core Components
-- Web Application Portal (Flask)
-- Odoo ERP Integration
-- PgAdmin Database Management
-- Vault Secret Management
-- Prometheus & Grafana Monitoring
-
-### Security Features
-- SSL/TLS encryption with Let's Encrypt
-- HashiCorp Vault integration
-- Secure secrets management
-- Network isolation
-- Regular security updates
-
-### Monitoring & Observability
-- Prometheus metrics collection
-- Grafana dashboards
-- Health checks
-- Audit logging
-- Performance monitoring
-
-### CI/CD Pipeline
-- Automated testing
-- Docker image building
-- Kubernetes deployment
-- Rolling updates
-- Automated rollbacks
-
-## Prerequisites
-- Docker 20.10+
-- Kubernetes 1.21+
-- Ansible 2.9+
-- Jenkins 2.3+
-- Python 3.6+
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone https://github.com/etogroup/infrastructure.git
+```text
+ci-cd-k8s-docker-ansible-webapp/
+├── ansible/          # Infrastructure automation
+├── docker/          # Container configurations
+├── k8s/             # Kubernetes manifests
+├── monitoring/      # Monitoring configuration
+├── security/        # Security and TLS
+└── tests/           # Unit and integration tests
 ```
-    Configure environment:
 
-bash
+## Quick Start
+
+    ### Clone and setup:
+
+```bash
+git clone git@github.com:your-org/eto-webapp.git
+cd eto-webapp
 cp .env.example .env
-# Edit .env with your configuration
+```
+    ## Start Vault:
 
-    Deploy infrastructure:
+```bash
+cd docker/vault/config
+docker-compose up -d
+```
+    Deploy Odoo:
 
-bash
-make deploy-all
+```bash
+cd docker/odoo
+docker-compose up -d
+```
+    Deploy PgAdmin:
 
-Configuration
+```bash
+cd docker/pgadmin
+docker-compose up -d
+```
+    Deploy Monitoring:
 
-    Update group_vars/all.yml for global configuration
-    Modify k8s/configmaps.yml for application settings
-    Edit k8s/secrets.yml for sensitive data
+```bash
+cd docker/monitoring
+docker-compose up -d grafana prometheus
+```
+## Access URLs
+| Service     | URL                     |
+|------------|-------------------------|
+| Odoo       | http://localhost:8069   |
+| PgAdmin    | http://localhost:5050   |
+| Grafana    | http://localhost:3000   |
+| Prometheus | http://localhost:9090   |
+| Vault      | http://localhost:8200   |
 
-Usage
-Access the following services:
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r docker/eto-webapp/requirements.txt
+```
 
-    Web Portal: https://portal.eto.local
-    Odoo ERP: https://odoo.eto.local
-    PgAdmin: https://pgadmin.eto.local
-    Vault: https://vault.eto.local
-    Grafana: https://grafana.eto.local
+## Run tests:
 
-Testing
+```bash
+python -m pytest tests/
+```
 
-bash
-# Run unit tests
-python -m pytest tests/unit
+## Maintenance
+### Backup:
 
-# Run integration tests
-python -m pytest tests/integration
+```bash
+./scripts/backup.sh
+```
 
-# Run security tests
-make security-scan
+### Restore:
 
-Maintenance
+```bash
+./scripts/restore.sh <backup-file>
+```
+## Monitoring
+The monitoring stack includes:
 
-    Regular backups configured
-    Automated security updates
-    Performance monitoring
-    Log rotation
-
-Security
-
-    All passwords must be changed from defaults
-    Access restricted by IP
-    Regular security audits required
-    SSL/TLS mandatory for all services
-
-
-
+    Application metrics dashboard
+    Database performance monitoring
+    Infrastructure overview
+    Real-time alerts via Prometheus
