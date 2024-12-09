@@ -1,6 +1,14 @@
 # ETO WebApp - Enterprise Management Platform
 ## Project Structure
 
+### Project Status 🚧
+
+```text
+🔄 Development Status: Active Development
+📊 Progress: ▓▓▓▓▓▓▓▓░░ 80%
+🎯 Current Phase: Integration & Testing
+```
+
 ```text
 ci-cd-k8s-docker-ansible-webapp/
 ├── ansible/          # Infrastructure automation
