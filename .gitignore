@@ -1,0 +1,4 @@
+.env
+**/vault.key
+**/vault.crt
+**/init.json
